@@ -379,7 +379,13 @@ else ifeq ($(my_clang),)
     my_clang := true
 endif
 
-my_sdclang := $(strip $(LOCAL_SDCLANG))
+my_sdclang := false
+
+ifeq ($(SDCLANG),true)
+    ifeq ($(TARGET_USE_SDCLANG),true)
+        my_sdclang := true
+    endif
+endif
 
 ifeq ($(LOCAL_C_STD),)
     my_c_std_version := $(DEFAULT_C_STD_VERSION)
