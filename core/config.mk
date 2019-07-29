@@ -1086,6 +1086,10 @@ include $(BUILD_SYSTEM)/soong_config.mk
 endif
 
 ifneq ($(WAVE_BUILD),)
+ifneq ($(BOARD_USES_QCOM_HARDWARE),true)
+$(warning BOARD_USES_QCOM_HARDWARE is not set!)
+$(error WaveOS is a CAF based ROM - it's for qualcomm devices only!)
+endif
 $(eval include device/wave/sepolicy/common/sepolicy.mk)
 endif
 
