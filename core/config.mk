@@ -224,6 +224,10 @@ include $(BUILD_SYSTEM)/envsetup.mk
 # See envsetup.mk for a description of SCAN_EXCLUDE_DIRS
 FIND_LEAVES_EXCLUDES := $(addprefix --prune=, $(SCAN_EXCLUDE_DIRS) .repo .git)
 
+ifneq ($(WAVE_BUILD),)
+include vendor/wave/build/core/qcom_target.mk
+endif
+
 # The build system exposes several variables for where to find the kernel
 # headers:
 #   TARGET_DEVICE_KERNEL_HEADERS is automatically created for the current
@@ -1090,7 +1094,7 @@ ifneq ($(BOARD_USES_QCOM_HARDWARE),true)
 $(warning BOARD_USES_QCOM_HARDWARE is not set!)
 $(error WaveOS is a CAF based ROM - it's for qualcomm devices only!)
 endif
-$(eval include device/wave/sepolicy/common/sepolicy.mk)
+include device/wave/sepolicy/common/sepolicy.mk
 endif
 
 include $(BUILD_SYSTEM)/dumpvar.mk
