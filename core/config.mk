@@ -235,6 +235,7 @@ FIND_LEAVES_EXCLUDES := $(addprefix --prune=, $(SCAN_EXCLUDE_DIRS) .repo .git)
 
 ifneq ($(WAVE_BUILD),)
 include vendor/wave/configs/BoardConfigWave.mk
+include vendor/wave/build/core/qcom_target.mk
 endif
 
 # The build system exposes several variables for where to find the kernel
