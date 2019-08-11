@@ -835,6 +835,32 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
 
   system_progress = 0.75
 
+  script.Print(" __          __              ____   _____  ");
+  script.Print(" \ \        / /             / __ \ / ____| ");
+  script.Print("  \ \  /\  / /_ ___   _____| |  | | (___   ");
+  script.Print("   \ \/  \/ / _` \ \ / / _ \ |  | |\___ \  ");
+  script.Print("    \  /\  / (_| |\ V /  __/ |__| |____) | ");
+  script.Print("     \/  \/ \__,_| \_/ \___|\____/|_____/  ");
+  script.Print("                                           ");
+
+  wave_ver = target_info.GetBuildProp("ro.wave.version")
+  android_ver = target_info.GetBuildProp("ro.build.version.release")
+  caf_ver = target_info.GetBuildProp("ro.qti.caf.version")
+  build_date = target_info.GetBuildProp("ro.build.date")
+  device = target_info.GetBuildProp("ro.product.device")
+  manufacturer = target_info.GetBuildProp("ro.product.manufacturer")
+
+  script.Print("***********************************************");
+  script.Print(" WaveOS version  : %s" % wave_ver);
+  script.Print(" Android version : %s" % android_ver);
+  script.Print(" CAF version     : %s" % caf_ver);
+  script.Print(" Build date      : %s" % build_date);
+  script.Print("***********************************************");
+  script.Print(" Device          : %s" % device);
+  script.Print(" Manufacturer    : %s" % manufacturer);
+  script.Print("***********************************************");
+  script.Print("");
+
   if OPTIONS.wipe_user_data:
     system_progress -= 0.1
   if HasVendorPartition(input_zip):
