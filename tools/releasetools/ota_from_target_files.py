@@ -803,6 +803,34 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
   # Dump fingerprints
   script.Print("Target: {}".format(target_info.fingerprint))
 
+  script.Print(" __          __              ____   _____  ");
+  script.Print(" \ \        / /             / __ \ / ____| ");
+  script.Print("  \ \  /\  / /_ ___   _____| |  | | (___   ");
+  script.Print("   \ \/  \/ / _` \ \ / / _ \ |  | |\___ \  ");
+  script.Print("    \  /\  / (_| |\ V /  __/ |__| |____) | ");
+  script.Print("     \/  \/ \__,_| \_/ \___|\____/|_____/  ");
+  script.Print("                                           ");
+
+  wave_ver = target_info.GetBuildProp("ro.wave.version")
+  wave_vercode = target_info.GetBuildProp("ro.wave.version_code")
+  android_ver = target_info.GetBuildProp("ro.build.version.release")
+  spl = target_info.GetBuildProp("ro.build.version.security_patch")
+  build_id = target_info.GetBuildProp("ro.build.id")
+  build_date = target_info.GetBuildProp("ro.build.date")
+  device = target_info.GetBuildProp("ro.product.device")
+  manufacturer = target_info.GetBuildProp("ro.product.manufacturer")
+
+  script.Print("***********************************************");
+  script.Print(" WaveOS version  : %s %s" % (wave_vercode, wave_ver));
+  script.Print(" Android version : %s (%s)" % (android_ver, build_id));
+  script.Print(" Security patch  : %s" % spl);
+  script.Print(" Build date      : %s" % build_date);
+  script.Print("***********************************************");
+  script.Print(" Device          : %s" % device);
+  script.Print(" Manufacturer    : %s" % manufacturer);
+  script.Print("***********************************************");
+  script.Print("");
+
   script.AppendExtra("ifelse(is_mounted(\"/system\"), unmount(\"/system\"));")
   device_specific.FullOTA_InstallBegin()
 
