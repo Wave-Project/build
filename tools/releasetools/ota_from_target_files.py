@@ -92,6 +92,9 @@ Usage:  ota_from_target_files [flags] input_target_files output_ota_package
   -e  (--extra_script)  <file>
       Insert the contents of file at the end of the update script.
 
+  --brotli <boolean>
+     Enable (default) or disable usage of brotli
+
   -2  (--two_step)
       Generate a 'two-step' OTA package, where recovery is updated
       first, so that any changes made to the system partition are done
@@ -217,6 +220,7 @@ OPTIONS.skip_postinstall = False
 OPTIONS.override_device = 'auto'
 OPTIONS.backuptool = False
 
+OPTIONS.brotli = True
 
 METADATA_NAME = 'META-INF/com/android/metadata'
 POSTINSTALL_CONFIG = 'META/postinstall_config.txt'
@@ -305,8 +309,8 @@ class BuildInfo(object):
     try:
       return self.info_dict.get("build.prop", {})[prop]
     except KeyError:
-      raise common.ExternalError("couldn't find %s in build.prop" % (prop,))
-
+      print ("WARNING: could not find %s in build.prop" % (prop,))
+    return None
   def GetVendorBuildProp(self, prop):
     """Returns the inquired vendor build property."""
     try:
@@ -820,7 +824,13 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
   # Dump fingerprints
   script.Print("Target: {}".format(target_info.fingerprint))
 
-  script.AppendExtra("ifelse(is_mounted(\"/system\"), unmount(\"/system\"));")
+  is_system_as_root = target_info.get("system_root_image") == "true"
+  if is_system_as_root and not common.system_as_system:
+    system_mount_point = "/system_root"
+  else:
+    system_mount_point = "/system"
+
+  script.AppendExtra("ifelse(is_mounted(\"{0}\"), unmount(\"{0}\"));".format(system_mount_point))
   device_specific.FullOTA_InstallBegin()
 
   CopyInstallTools(output_zip)
@@ -829,37 +839,18 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
   script.SetPermissionsRecursive("/tmp/install/bin", 0, 0, 0755, 0755, None, None)
 
   if OPTIONS.backuptool:
+    if is_system_as_root:
+      script.fstab["/system"].mount_point = system_mount_point
     script.Mount("/system")
-    script.RunBackup("backup")
-    script.Unmount("/system")
+    if is_system_as_root and common.system_as_system:
+      script.RunBackup("backup", "/system/system")
+    else:
+      script.RunBackup("backup", "/system")
+    script.Unmount(system_mount_point)
+    if is_system_as_root:
+      script.fstab["/system"].mount_point = "/"
 
   system_progress = 0.75
-
-  script.Print(" __          __              ____   _____  ");
-  script.Print(" \ \        / /             / __ \ / ____| ");
-  script.Print("  \ \  /\  / /_ ___   _____| |  | | (___   ");
-  script.Print("   \ \/  \/ / _` \ \ / / _ \ |  | |\___ \  ");
-  script.Print("    \  /\  / (_| |\ V /  __/ |__| |____) | ");
-  script.Print("     \/  \/ \__,_| \_/ \___|\____/|_____/  ");
-  script.Print("                                           ");
-
-  wave_ver = target_info.GetBuildProp("ro.wave.version")
-  android_ver = target_info.GetBuildProp("ro.build.version.release")
-  caf_ver = target_info.GetBuildProp("ro.qti.caf.version")
-  build_date = target_info.GetBuildProp("ro.build.date")
-  device = target_info.GetBuildProp("ro.product.device")
-  manufacturer = target_info.GetBuildProp("ro.product.manufacturer")
-
-  script.Print("***********************************************");
-  script.Print(" WaveOS version  : %s" % wave_ver);
-  script.Print(" Android version : %s" % android_ver);
-  script.Print(" CAF version     : %s" % caf_ver);
-  script.Print(" Build date      : %s" % build_date);
-  script.Print("***********************************************");
-  script.Print(" Device          : %s" % device);
-  script.Print(" Manufacturer    : %s" % manufacturer);
-  script.Print("***********************************************");
-  script.Print("");
 
   if OPTIONS.wipe_user_data:
     system_progress -= 0.1
@@ -878,7 +869,7 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
   system_tgt = common.GetSparseImage("system", OPTIONS.input_tmp, input_zip,
                                      allow_shared_blocks)
   system_tgt.ResetFileMap()
-  system_diff = common.BlockDifference("system", system_tgt, src=None)
+  system_diff = common.BlockDifference("system", system_tgt, src=None, brotli=OPTIONS.brotli)
   system_diff.WriteScript(script, output_zip)
 
   boot_img = common.GetBootableImage(
@@ -890,10 +881,8 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
     vendor_tgt = common.GetSparseImage("vendor", OPTIONS.input_tmp, input_zip,
                                        allow_shared_blocks)
     vendor_tgt.ResetFileMap()
-    vendor_diff = common.BlockDifference("vendor", vendor_tgt)
+    vendor_diff = common.BlockDifference("vendor", vendor_tgt, brotli=OPTIONS.brotli)
     vendor_diff.WriteScript(script, output_zip)
-
-  AddCompatibilityArchiveIfTrebleEnabled(input_zip, output_zip, target_info)
 
   common.CheckSize(boot_img.data, "boot.img", target_info)
   common.ZipWriteStr(output_zip, "boot.img", boot_img.data)
@@ -902,9 +891,16 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
 
   if OPTIONS.backuptool:
     script.ShowProgress(0.02, 10)
+    if is_system_as_root:
+      script.fstab["/system"].mount_point = system_mount_point
     script.Mount("/system")
-    script.RunBackup("restore")
-    script.Unmount("/system")
+    if is_system_as_root and common.system_as_system:
+      script.RunBackup("restore", "/system/system")
+    else:
+      script.RunBackup("restore", "/system")
+    script.Unmount(system_mount_point)
+    if is_system_as_root:
+      script.fstab["/system"].mount_point = "/"
 
   script.ShowProgress(0.05, 5)
   script.WriteRawImage("/boot", "boot.img")
@@ -1464,7 +1460,8 @@ def WriteBlockIncrementalOTAPackage(target_zip, source_zip, output_file):
   system_diff = common.BlockDifference("system", system_tgt, system_src,
                                        check_first_block,
                                        version=blockimgdiff_version,
-                                       disable_imgdiff=disable_imgdiff)
+                                       disable_imgdiff=disable_imgdiff,
+                                       brotli=OPTIONS.brotli)
 
   if HasVendorPartition(target_zip):
     if not HasVendorPartition(source_zip):
@@ -1482,12 +1479,10 @@ def WriteBlockIncrementalOTAPackage(target_zip, source_zip, output_file):
     vendor_diff = common.BlockDifference("vendor", vendor_tgt, vendor_src,
                                          check_first_block,
                                          version=blockimgdiff_version,
-                                         disable_imgdiff=disable_imgdiff)
+                                         disable_imgdiff=disable_imgdiff,
+                                         brotli=OPTIONS.brotli)
   else:
     vendor_diff = None
-
-  AddCompatibilityArchiveIfTrebleEnabled(
-      target_zip, output_zip, target_info, source_info)
 
   # Assertions (e.g. device properties check).
   target_info.WriteDeviceAssertions(script, OPTIONS.oem_no_mount)
@@ -1824,9 +1819,6 @@ def WriteABOTAPackageWithBrilloScript(target_file, output_file,
     else:
       print("Warning: cannot find care map file in target_file package")
 
-  AddCompatibilityArchiveIfTrebleEnabled(
-      target_zip, output_zip, target_info, source_info)
-
   common.ZipClose(target_zip)
 
   # We haven't written the metadata entry yet, which will be handled in
@@ -1874,6 +1866,8 @@ def main(argv):
       else:
         raise ValueError("Cannot parse value %r for option %r - only "
                          "integers are allowed." % (a, o))
+    elif o in ("--brotli"):
+      OPTIONS.brotli = bool(a.lower() == 'true')
     elif o in ("-2", "--two_step"):
       OPTIONS.two_step = True
     elif o == "--include_secondary":
@@ -1922,6 +1916,7 @@ def main(argv):
                                  "override_timestamp",
                                  "extra_script=",
                                  "worker_threads=",
+                                 "brotli=",
                                  "two_step",
                                  "include_secondary",
                                  "no_signing",
