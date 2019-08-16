@@ -543,13 +543,8 @@ my_target_global_cppflags := $($(LOCAL_2ND_ARCH_VAR_PREFIX)CLANG_$(my_prefix)GLO
 my_target_global_ldflags := $($(LOCAL_2ND_ARCH_VAR_PREFIX)CLANG_$(my_prefix)GLOBAL_LDFLAGS)
     ifeq ($(my_sdclang),true)
         my_target_global_cflags += $(SDCLANG_COMMON_FLAGS)
-
-        ifeq ($(strip $(my_cc)),)
-            my_cc := $(my_cc_wrapper) $(SDCLANG_PATH)/clang
-        endif
-        ifeq ($(strip $(my_cxx)),)
-            my_cxx := $(my_cxx_wrapper) $(SDCLANG_PATH)/clang++
-        endif
+        my_cc := $(my_cc_wrapper) $(SDCLANG_PATH)/clang
+        my_cxx := $(my_cxx_wrapper) $(SDCLANG_PATH)/clang++
     endif
 else
 my_target_global_cflags := $($(LOCAL_2ND_ARCH_VAR_PREFIX)$(my_prefix)GLOBAL_CFLAGS)
