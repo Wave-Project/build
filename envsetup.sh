@@ -676,7 +676,7 @@ function lunch()
         if [[ $NO_ROOMSERVICE == true ]]; then
             echo "Roomservice turned off, type in 'export NO_ROOMSERVICE=false' if you want it back on"
         else
-            vendor/wave/build/tools/roomservice.py $product
+            python3 vendor/wave/build/tools/roomservice.py $product
         fi
         popd > /dev/null
         check_product $product
