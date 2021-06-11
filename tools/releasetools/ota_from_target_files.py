@@ -817,7 +817,7 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
   script.Print("                                           ");
 
   wave_ver = target_info.GetBuildProp("ro.wave.version")
-  wave_vercode = target_info.GetBuildProp("ro.wave.version_code")
+  wave_flavour = target_info.GetBuildProp("ro.wave.flavour")
   android_ver = target_info.GetBuildProp("ro.build.version.release")
   spl = target_info.GetBuildProp("ro.build.version.security_patch")
   build_id = target_info.GetBuildProp("ro.build.id")
@@ -826,7 +826,7 @@ else if get_stage("%(bcb_dev)s") == "3/3" then
   manufacturer = target_info.GetBuildProp("ro.product.manufacturer")
 
   script.Print("***********************************************");
-  script.Print(" WaveOS version  : %s %s" % (wave_vercode, wave_ver));
+  script.Print(" WaveOS version  : %s %s" % (wave_flavour, wave_ver));
   script.Print(" Android version : %s (%s)" % (android_ver, build_id));
   script.Print(" Security patch  : %s" % spl);
   script.Print(" Build date      : %s" % build_date);
